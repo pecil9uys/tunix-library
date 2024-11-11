@@ -1,0 +1,32 @@
+# Build directories
+build/
+.xmake/
+*.o
+*.obj
+*.a
+*.lib
+*.exe
+*.out
+*.dll
+*.so
+*.dylib
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled files
+*.pdb
+*.ilk
+*.exp
+
+# Logs
+*.log
+
+# Cache
+.cache/
+compile_commands.json
