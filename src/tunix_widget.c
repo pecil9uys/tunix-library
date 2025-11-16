@@ -706,8 +706,12 @@ void tunix_widget_render(tunix_widget *widget, tunix_renderer *renderer) {
             tunix_rect empty = {bounds.x + filled_width, bounds.y, 
                               bounds.width - filled_width, bounds.height};
             
-            tunix_renderer_draw_rect(renderer, filled, fg, 
-                                   tunix_color_from_type(TUNIX_COLOR_GREEN));
+            /* Use brighter green if focused */
+            tunix_style_color bar_color = widget->focused ? 
+                tunix_color_from_type(TUNIX_COLOR_CYAN) : 
+                tunix_color_from_type(TUNIX_COLOR_GREEN);
+            
+            tunix_renderer_draw_rect(renderer, filled, fg, bar_color);
             tunix_renderer_draw_rect(renderer, empty, fg, bg);
             break;
         }
@@ -719,6 +723,10 @@ void tunix_widget_render(tunix_widget *widget, tunix_renderer *renderer) {
                 int slider_pos = (int)(bounds.width * normalized);
                 bool use_unicode = tunix_platform_supports_unicode();
                 
+                /* Use highlight colors if focused */
+                tunix_style_color slider_fg = widget->focused ? 
+                    tunix_color_from_type(TUNIX_COLOR_CYAN) : fg;
+                
                 for (int x = 0; x < bounds.width; x++) {
                     const char *ch;
                     if (x == slider_pos) {
@@ -727,7 +735,7 @@ void tunix_widget_render(tunix_widget *widget, tunix_renderer *renderer) {
                         ch = use_unicode ? "─" : "-";
                     }
                     tunix_renderer_set_cell(renderer, bounds.x + x, bounds.y, 
-                                          ch, fg, bg);
+                                          ch, slider_fg, bg);
                 }
             }
             break;
@@ -735,30 +743,65 @@ void tunix_widget_render(tunix_widget *widget, tunix_renderer *renderer) {
         
         case TUNIX_WIDGET_TEXTBOX: {
             textbox_data *data = (textbox_data*)widget->data;
-            tunix_renderer_draw_rect(renderer, bounds, fg, bg);
+            
+            /* Use highlight colors if focused */
+            tunix_style_color textbox_fg = widget->focused ? 
+                tunix_color_from_type(TUNIX_COLOR_WHITE) : fg;
+            tunix_style_color textbox_border = widget->focused ? 
+                tunix_color_from_type(TUNIX_COLOR_CYAN) : border_color;
+            
+            tunix_renderer_draw_rect(renderer, bounds, textbox_fg, bg);
             if (widget->theme.border != TUNIX_BORDER_NONE) {
                 tunix_renderer_draw_border(renderer, bounds, widget->theme.border, 
-                                         &widget->theme.border_chars, border_color);
+                                         &widget->theme.border_chars, textbox_border);
             }
             if (data && data->text) {
                 tunix_renderer_draw_text(renderer, bounds.x + 1, bounds.y + 1, 
-                                       data->text, fg, bg);
+                                       data->text, textbox_fg, bg);
+                
+                /* Show cursor if focused */
+                if (widget->focused && data->cursor_pos >= 0) {
+                    int cursor_x = bounds.x + 1 + data->cursor_pos;
+                    int cursor_y = bounds.y + 1;
+                    if (cursor_x < bounds.x + bounds.width - 1) {
+                        tunix_renderer_set_cell(renderer, cursor_x, cursor_y, 
+                            "_", tunix_color_from_type(TUNIX_COLOR_YELLOW), bg);
+                    }
+                }
             }
             break;
         }
         
         case TUNIX_WIDGET_EDITOR: {
             editor_data *data = (editor_data*)widget->data;
-            tunix_renderer_draw_rect(renderer, bounds, fg, bg);
+            
+            /* Use highlight colors if focused */
+            tunix_style_color editor_fg = widget->focused ? 
+                tunix_color_from_type(TUNIX_COLOR_WHITE) : fg;
+            tunix_style_color editor_border = widget->focused ? 
+                tunix_color_from_type(TUNIX_COLOR_CYAN) : border_color;
+            
+            tunix_renderer_draw_rect(renderer, bounds, editor_fg, bg);
             if (widget->theme.border != TUNIX_BORDER_NONE) {
                 tunix_renderer_draw_border(renderer, bounds, widget->theme.border, 
-                                         &widget->theme.border_chars, border_color);
+                                         &widget->theme.border_chars, editor_border);
             }
             if (data && data->lines) {
                 int visible_lines = bounds.height - 2;
                 for (int i = 0; i < visible_lines && i + data->scroll_offset < data->line_count; i++) {
                     tunix_renderer_draw_text(renderer, bounds.x + 1, bounds.y + 1 + i, 
-                                           data->lines[i + data->scroll_offset], fg, bg);
+                                           data->lines[i + data->scroll_offset], editor_fg, bg);
+                }
+                
+                /* Show cursor if focused */
+                if (widget->focused) {
+                    int cursor_x = bounds.x + 1 + data->cursor_col;
+                    int cursor_y = bounds.y + 1 + (data->cursor_row - data->scroll_offset);
+                    if (cursor_y >= bounds.y + 1 && cursor_y < bounds.y + bounds.height - 1 &&
+                        cursor_x >= bounds.x + 1 && cursor_x < bounds.x + bounds.width - 1) {
+                        tunix_renderer_set_cell(renderer, cursor_x, cursor_y, 
+                            "_", tunix_color_from_type(TUNIX_COLOR_YELLOW), bg);
+                    }
                 }
             }
             break;
@@ -766,10 +809,15 @@ void tunix_widget_render(tunix_widget *widget, tunix_renderer *renderer) {
         
         case TUNIX_WIDGET_LIST: {
             list_data *data = (list_data*)widget->data;
+            
+            /* Use highlight colors if focused */
+            tunix_style_color list_border = widget->focused ? 
+                tunix_color_from_type(TUNIX_COLOR_CYAN) : border_color;
+            
             tunix_renderer_draw_rect(renderer, bounds, fg, bg);
             if (widget->theme.border != TUNIX_BORDER_NONE) {
                 tunix_renderer_draw_border(renderer, bounds, widget->theme.border, 
-                                         &widget->theme.border_chars, border_color);
+                                         &widget->theme.border_chars, list_border);
             }
             if (data && data->items) {
                 int visible_items = bounds.height - 2;
@@ -919,6 +967,35 @@ void tunix_widget_render(tunix_widget *widget, tunix_renderer *renderer) {
     }
 }
 
+/* Helper function to find next focusable widget */
+static tunix_widget* find_next_focusable(tunix_widget *root, tunix_widget *current) {
+    if (!root) return NULL;
+    
+    bool found_current = false;
+    tunix_widget *first_focusable = NULL;
+    
+    /* Recursive search */
+    tunix_widget *stack[256];
+    int stack_top = 0;
+    stack[stack_top++] = root;
+    
+    while (stack_top > 0) {
+        tunix_widget *w = stack[--stack_top];
+        
+        if (w->focusable && w->visible && w->enabled) {
+            if (!first_focusable) first_focusable = w;
+            if (found_current) return w;
+            if (w == current) found_current = true;
+        }
+        
+        for (int i = 0; i < w->child_count; i++) {
+            if (stack_top < 256) stack[stack_top++] = w->children[i];
+        }
+    }
+    
+    return first_focusable;
+}
+
 /* Event handling */
 bool tunix_widget_handle_event(tunix_widget *widget, tunix_event *event) {
     if (!widget || !event || !widget->visible || !widget->enabled) {
@@ -935,7 +1012,12 @@ bool tunix_widget_handle_event(tunix_widget *widget, tunix_event *event) {
     if (event->type == TUNIX_EVENT_KEY) {
         if (event->data.key.key == TUNIX_KEY_TAB) {
             /* Focus next focusable widget */
-            return true;
+            tunix_widget *next = find_next_focusable(widget, widget->focused ? widget : NULL);
+            if (next) {
+                if (widget->focused) widget->focused = false;
+                next->focused = true;
+                return true;
+            }
         }
         
         if (widget->focused) {
@@ -1019,6 +1101,113 @@ bool tunix_widget_handle_event(tunix_widget *widget, tunix_event *event) {
                                 return true;
                             }
                         }
+                    }
+                    break;
+                }
+                
+                case TUNIX_WIDGET_SLIDER: {
+                    slider_data *data = (slider_data*)widget->data;
+                    if (data) {
+                        float step = (data->max - data->min) / 20.0f;
+                        bool changed = false;
+                        
+                        if (event->data.key.key == TUNIX_KEY_ARROW_RIGHT) {
+                            data->value += step;
+                            if (data->value > data->max) data->value = data->max;
+                            changed = true;
+                        } else if (event->data.key.key == TUNIX_KEY_ARROW_LEFT) {
+                            data->value -= step;
+                            if (data->value < data->min) data->value = data->min;
+                            changed = true;
+                        }
+                        
+                        if (changed && widget->on_change) {
+                            widget->on_change(widget, widget->user_data);
+                            return true;
+                        }
+                    }
+                    break;
+                }
+                
+                case TUNIX_WIDGET_PROGRESS: {
+                    progress_data *data = (progress_data*)widget->data;
+                    if (data) {
+                        bool changed = false;
+                        
+                        if (event->data.key.key == TUNIX_KEY_ARROW_RIGHT) {
+                            data->value += 0.05f;
+                            if (data->value > 1.0f) data->value = 1.0f;
+                            changed = true;
+                        } else if (event->data.key.key == TUNIX_KEY_ARROW_LEFT) {
+                            data->value -= 0.05f;
+                            if (data->value < 0.0f) data->value = 0.0f;
+                            changed = true;
+                        }
+                        
+                        if (changed && widget->on_change) {
+                            widget->on_change(widget, widget->user_data);
+                            return true;
+                        }
+                    }
+                    break;
+                }
+                
+                case TUNIX_WIDGET_DROPDOWN: {
+                    dropdown_data *data = (dropdown_data*)widget->data;
+                    if (data) {
+                        if (event->data.key.key == TUNIX_KEY_ENTER || event->data.key.key == TUNIX_KEY_SPACE) {
+                            data->expanded = !data->expanded;
+                            return true;
+                        }
+                        
+                        if (data->expanded) {
+                            if (event->data.key.key == TUNIX_KEY_ARROW_DOWN) {
+                                if (data->selected_index < data->item_count - 1) {
+                                    data->selected_index++;
+                                    if (widget->on_change) {
+                                        widget->on_change(widget, widget->user_data);
+                                    }
+                                    return true;
+                                }
+                            } else if (event->data.key.key == TUNIX_KEY_ARROW_UP) {
+                                if (data->selected_index > 0) {
+                                    data->selected_index--;
+                                    if (widget->on_change) {
+                                        widget->on_change(widget, widget->user_data);
+                                    }
+                                    return true;
+                                }
+                            }
+                        }
+                    }
+                    break;
+                }
+                
+                case TUNIX_WIDGET_EDITOR: {
+                    editor_data *data = (editor_data*)widget->data;
+                    if (data) {
+                        bool changed = false;
+                        
+                        if (event->data.key.key == TUNIX_KEY_ARROW_UP && data->cursor_row > 0) {
+                            data->cursor_row--;
+                            changed = true;
+                        } else if (event->data.key.key == TUNIX_KEY_ARROW_DOWN && data->cursor_row < data->line_count - 1) {
+                            data->cursor_row++;
+                            changed = true;
+                        } else if (event->data.key.key == TUNIX_KEY_ARROW_LEFT && data->cursor_col > 0) {
+                            data->cursor_col--;
+                            changed = true;
+                        } else if (event->data.key.key == TUNIX_KEY_ARROW_RIGHT) {
+                            if (data->cursor_row < data->line_count && data->lines[data->cursor_row]) {
+                                int line_len = (int)strlen(data->lines[data->cursor_row]);
+                                if (data->cursor_col < line_len) {
+                                    data->cursor_col++;
+                                    changed = true;
+                                }
+                            }
+                        }
+                        
+                        if (changed) return true;
                     }
                     break;
                 }
@@ -1161,6 +1350,7 @@ tunix_widget* tunix_progress_create(float value) {
     
     data->value = value;
     widget->data = data;
+    widget->focusable = true;
     widget->bounds.height = 1;
     widget->bounds.width = 20;
     

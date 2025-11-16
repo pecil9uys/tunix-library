@@ -62,6 +62,10 @@ target_link_libraries(dashboard_demo PRIVATE tunix)
 add_executable(spinner_demo examples/spinner_demo.c)
 target_link_libraries(spinner_demo PRIVATE tunix)
 
+# C Example - Interactive controls
+add_executable(interactive_demo examples/interactive_demo.c)
+target_link_libraries(interactive_demo PRIVATE tunix)
+
 # Installation rules
 install(TARGETS tunix
     EXPORT tunixTargets

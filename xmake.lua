@@ -75,3 +75,10 @@ target("spinner_demo")
     add_files("examples/spinner_demo.c")
     add_deps("tunix")
 target_end()
+
+-- Interactive Controls Example
+target("interactive_demo")
+    set_kind("binary")
+    add_files("examples/interactive_demo.c")
+    add_deps("tunix")
+target_end()

@@ -22,6 +22,17 @@ A powerful, cross-platform terminal UI framework written in pure C11 with an opt
 - Line clearing modes
 - Bell/beep notifications
 
+### 🎮 Full Keyboard & Focus Control
+- **TAB Navigation**: Cycle through focusable widgets
+- **Arrow Keys**: Navigate lists, adjust sliders/progress bars, move cursor in editors
+- **Enter/Space**: Activate buttons, toggle dropdowns, select items
+- **ESC**: Close dropdowns, exit application
+- **Home/End**: Jump to line start/end in editors
+- **+/-**: Adjust progress bar values
+- **Backspace**: Delete text in textboxes
+- **Visual Focus Indicators**: Cyan borders and highlights for focused widgets
+- **Visible Cursors**: Yellow cursor indicators in textboxes and editors
+
 ### 🎨 Complete Widget Set
 - **Text**: Label, Button
 - **Input**: Textbox, Editor (multi-line)
@@ -155,18 +166,19 @@ int main() {
 xmake
 
 # Build specific target
-xmake build tunix             # C library only
-xmake build demo_c            # C example
-xmake build demo_cpp          # C++ example
-xmake build spinner_demo      # Spinner animation demo
-xmake build advanced_demo     # Terminal controls demo
-xmake build form_demo         # Form with validation
-xmake build dashboard_demo    # System monitoring dashboard
+xmake build tunix              # C library only
+xmake build demo_c             # C basic example
+xmake build demo_cpp           # C++ basic example
+xmake build spinner_demo       # Spinner animation demo
+xmake build interactive_demo   # Full keyboard & focus demo (NEW!)
+xmake build advanced_demo      # Terminal controls demo
+xmake build form_demo          # Form with validation
+xmake build dashboard_demo     # System monitoring dashboard
 
 # Run examples
 xmake run demo_c
+xmake run interactive_demo     # Try TAB, arrow keys, typing!
 xmake run spinner_demo
-xmake run advanced_demo
 
 # Clean
 xmake clean
@@ -180,6 +192,7 @@ cmake --build build
 
 # Run examples
 ./build/demo_c
+./build/interactive_demo       # Try TAB, arrow keys, typing!
 ./build/spinner_demo
 ./build/advanced_demo
 ```
@@ -279,6 +292,73 @@ tunix_spinner_stop(spinner);
 - `TUNIX_SPINNER_BOUNCE` - Bouncing effect
 - `TUNIX_SPINNER_CLOCK` - Clock hands
 - `TUNIX_SPINNER_DOTS_SIMPLE` - Growing dots
+
+## Interactive Controls
+
+### Keyboard Shortcuts
+All focusable widgets respond to keyboard input:
+
+| Key | Action |
+|-----|--------|
+| **TAB** | Cycle focus to next widget |
+| **↑↓←→** | Navigate lists, adjust sliders/progress, move cursor |
+| **Enter** | Activate buttons, select list items, toggle dropdowns |
+| **Space** | Toggle checkboxes, open dropdowns |
+| **ESC** | Close dropdowns, quit application |
+| **Home/End** | Jump to line start/end in editors |
+| **+/-** | Adjust progress bar values |
+| **Backspace** | Delete characters in textboxes |
+| **A-Z, 0-9** | Type in textboxes and editors |
+
+### Focus Management
+```c
+/* Make a widget focusable */
+widget->focusable = true;
+
+/* Check if focused */
+if (widget->focused) {
+    /* Handle focused state */
+}
+
+/* TAB key automatically cycles focus */
+/* Focused widgets show cyan borders */
+```
+
+### Progress Bar Controls
+```c
+tunix_widget *progress = tunix_progress_create(0.5f);
+widget->focusable = true;  /* Allow keyboard control */
+
+/* User can adjust with arrow keys or +/- when focused */
+tunix_widget_set_on_change(progress, on_progress_change, NULL);
+```
+
+### Slider Controls
+```c
+tunix_widget *slider = tunix_slider_create(0.0f, 100.0f, 50.0f);
+/* Already focusable - use left/right arrows to adjust */
+tunix_widget_set_on_change(slider, on_slider_change, NULL);
+```
+
+### List & Dropdown Navigation
+```c
+tunix_widget *list = tunix_list_create(items, count);
+/* Arrow keys to navigate, Enter to select */
+
+tunix_widget *dropdown = tunix_dropdown_create(items, count);
+/* Enter/Space to expand, Arrow keys to navigate */
+```
+
+### Text Editing
+```c
+tunix_widget *textbox = tunix_textbox_create("Type here");
+/* Type to add text, Backspace to delete */
+/* Cursor shown at insertion point when focused */
+
+tunix_widget *editor = tunix_editor_create("Multi-line");
+/* Arrow keys to move cursor, Home/End for line navigation */
+/* Cursor shown at current position when focused */
+```
 
 ## Advanced Features
 
